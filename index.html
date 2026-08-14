@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI 入门科普</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #050811;
+            --bg-panel: rgba(16, 24, 48, 0.72);
+            --cyan: #00f0ff;
+            --cyan-dim: rgba(0, 240, 255, 0.15);
+            --purple: #b24bff;
+            --accent: #ff3e8e;
+            --text: #f0f4ff;
+            --text-dim: #8b95b8;
+            --radius: 22px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+        body {
+            font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg-deep);
+            color: var(--text);
+            user-select: none;
+        }
+
+        /* 动态背景 */
+        .universe {
+            position: fixed; inset: 0; z-index: 0;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(0, 240, 255, 0.18) 0%, transparent 45%),
+                radial-gradient(circle at 80% 70%, rgba(178, 75, 255, 0.16) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(255, 62, 142, 0.08) 0%, transparent 60%),
+                var(--bg-deep);
+            overflow: hidden;
+        }
+        .stars {
+            position: absolute; inset: -50%;
+            background-image:
+                radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(1.5px 1.5px at 150px 80px, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 300px 250px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(2px 2px at 400px 120px, rgba(255,255,255,0.4), transparent);
+            background-size: 550px 550px;
+            animation: drift 120s linear infinite;
+            opacity: 0.6;
+        }
+        @keyframes drift { to { transform: translate(50px, 80px); } }
+
+        /* 页面容器 */
+        .stage {
+            position: fixed; inset: 0; z-index: 10;
+            display: flex; flex-direction: column;
+        }
+        .slides {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        .slide {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            padding: 28px 24px 80px;
+            opacity: 0; pointer-events: none;
+            transform: translateY(30px) scale(0.96);
+            transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+            overflow-y: auto;
+        }
+        .slide.active {
+            opacity: 1; pointer-events: auto;
+            transform: translateY(0) scale(1);
+            z-index: 1;
+        }
+        .slide.prev { transform: translateY(-100%) scale(0.9); opacity: 0; }
+        .slide.next { transform: translateY(100%) scale(0.9); opacity: 0; }
+
+        /* 通用排版 */
+        h1, h2, h3, p { margin: 0; }
+        .eyebrow {
+            font-family: "Orbitron", sans-serif;
+            font-size: 12px; letter-spacing: 3px;
+            color: var(--cyan); text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .title-lg {
+            font-size: clamp(34px, 9vw, 52px);
+            font-weight: 900; line-height: 1.15;
+            background: linear-gradient(135deg, #fff 0%, var(--cyan) 100%);
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+        }
+        .title-md {
+            font-size: clamp(26px, 7vw, 38px);
+            font-weight: 800; line-height: 1.2;
+            margin-bottom: 18px;
+        }
+        .subtitle {
+            font-size: 16px; line-height: 1.7;
+            color: var(--text-dim); max-width: 320px;
+        }
+
+        /* 玻璃卡片 */
+        .glass {
+            background: var(--bg-panel);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: var(--radius);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+        .card {
+            width: 100%; max-width: 360px;
+            padding: 24px; margin: 10px 0;
+        }
+        .card-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 14px; width: 100%; max-width: 360px;
+        }
+        .card-mini {
+            padding: 18px 14px; text-align: center;
+        }
+        .card-mini .icon {
+            width: 48px; height: 48px; margin: 0 auto 10px;
+            border-radius: 14px;
+            display: grid; place-items: center;
+            font-size: 24px;
+            background: var(--cyan-dim);
+        }
+        .card-mini h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+        .card-mini p { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+
+        /* 装饰元素 */
+        .glow-ring {
+            position: absolute; width: 280px; height: 280px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, transparent, var(--cyan), transparent, var(--purple), transparent);
+            filter: blur(28px); opacity: 0.35;
+            animation: spin 14s linear infinite;
+            z-index: -1;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .ai-orb {
+            width: 160px; height: 160px; border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.9), var(--cyan) 40%, var(--purple) 90%);
+            box-shadow: 0 0 60px rgba(0,240,255,0.4), inset 0 0 30px rgba(255,255,255,0.3);
+            animation: pulse 3s ease-in-out infinite;
+            margin-bottom: 28px;
+        }
+        @keyframes pulse { 0%,100%{ transform: scale(1); } 50%{ transform: scale(1.05); } }
+
+        /* 列表与步骤 */
+        .step-list { width: 100%; max-width: 360px; }
+        .step {
+            display: flex; align-items: flex-start; gap: 14px;
+            padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .step:last-child { border-bottom: none; }
+        .step-num {
+            flex-shrink: 0; width: 34px; height: 34px;
+            border-radius: 10px;
+            display: grid; place-items: center;
+            font-family: "Orbitron", sans-serif;
+            font-weight: 700; font-size: 14px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+        }
+        .step h3 { font-size: 16px; margin-bottom: 4px; }
+        .step p { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+
+        /* 进度指示 */
+        .progress {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            height: 4px; background: rgba(255,255,255,0.06);
+            z-index: 100;
+        }
+        .progress-bar {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, var(--cyan), var(--purple));
+            transition: width 0.5s ease;
+        }
+        .dots {
+            position: fixed; bottom: 18px; left: 50%;
+            transform: translateX(-50%);
+            display: flex; gap: 8px; z-index: 100;
+        }
+        .dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: rgba(255,255,255,0.25);
+            transition: all 0.3s ease;
+        }
+        .dot.active { width: 22px; border-radius: 4px; background: var(--cyan); }
+
+        /* 导航 */
+        .nav-hint {
+            position: fixed; bottom: 38px; left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px; color: var(--text-dim);
+            display: flex; align-items: center; gap: 6px;
+            z-index: 90; opacity: 0.8;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce { 0%,100%{ transform: translateX(-50%) translateY(0); } 50%{ transform: translateX(-50%) translateY(6px); } }
+
+        /* 按钮 */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 14px 32px; border-radius: 30px;
+            font-size: 15px; font-weight: 700;
+            color: #000; background: linear-gradient(135deg, var(--cyan), var(--purple));
+            border: none; cursor: pointer;
+            box-shadow: 0 8px 24px rgba(0,240,255,0.25);
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 8px;
+        }
+        .btn:active { transform: scale(0.96); }
+
+        /* 问答交互 */
+        .quiz-options { width: 100%; max-width: 360px; margin-top: 18px; }
+        .quiz-option {
+            width: 100%; padding: 16px 18px; margin-bottom: 12px;
+            border-radius: 16px; text-align: left;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: var(--text); font-size: 15px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .quiz-option:hover { background: rgba(255,255,255,0.1); }
+        .quiz-option.correct { border-color: #2ecc71; background: rgba(46,204,113,0.12); }
+        .quiz-option.wrong { border-color: var(--accent); background: rgba(255,62,142,0.12); }
+        .quiz-feedback {
+            margin-top: 14px; font-size: 14px; color: var(--text-dim);
+            min-height: 22px; text-align: center;
+        }
+
+        /* 标签云 */
+        .tag-cloud {
+            display: flex; flex-wrap: wrap; gap: 10px;
+            justify-content: center; max-width: 360px; margin-top: 20px;
+        }
+        .tag {
+            padding: 8px 16px; border-radius: 20px;
+            font-size: 13px; font-weight: 500;
+            background: rgba(0,240,255,0.1);
+            border: 1px solid rgba(0,240,255,0.2);
+            color: var(--cyan);
+        }
+        .tag.purple { background: rgba(178,75,255,0.1); border-color: rgba(178,75,255,0.2); color: var(--purple); }
+        .tag.accent { background: rgba(255,62,142,0.1); border-color: rgba(255,62,142,0.2); color: var(--accent); }
+
+        /* 入场动画 */
+        .active .fade-up { animation: fadeUp 0.8s cubic-bezier(0.22,1,0.36,1) forwards; opacity: 0; }
+        .active .fade-up:nth-child(1){ animation-delay: 0.1s; }
+        .active .fade-up:nth-child(2){ animation-delay: 0.2s; }
+        .active .fade-up:nth-child(3){ animation-delay: 0.3s; }
+        .active .fade-up:nth-child(4){ animation-delay: 0.4s; }
+        .active .fade-up:nth-child(5){ animation-delay: 0.5s; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 响应式 */
+        @media (min-width: 768px) {
+            .stage { max-width: 414px; margin: 0 auto; border-left: 1px solid rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.05); }
+        }
+    </style>
+</head>
+<body>
+    <div class="universe"><div class="stars"></div></div>
+
+    <div class="stage">
+        <div class="slides" id="slides">
+            <!-- 封面 -->
+            <section class="slide active">
+                <div class="glow-ring"></div>
+                <div class="ai-orb fade-up"></div>
+                <div class="eyebrow fade-up">AI POPULAR SCIENCE</div>
+                <h1 class="title-lg fade-up">AI<br>入门科普</h1>
+                <p class="subtitle fade-up">面向大众的人工智能知识科普。从零开始，读懂 AI 是什么、能做什么、会怎样改变生活。</p>
+                <div class="tag-cloud fade-up">
+                    <span class="tag">零门槛</span>
+                    <span class="tag purple">互动式</span>
+                    <span class="tag accent">场景化</span>
+                </div>
+            </section>
+
+            <!-- AI 是什么 -->
+            <section class="slide">
+                <div class="eyebrow fade-up">01 / WHAT</div>
+                <h2 class="title-md fade-up">AI 是什么？</h2>
+                <p class="subtitle fade-up" style="margin-bottom:22px;">人工智能（Artificial Intelligence）是让机器模拟人类智能行为的技术。它不是一种魔法，而是数学、算法与数据的结合。</p>
+                <div class="card glass fade-up">
+                    <div class="step">
+                        <div class="step-num">A</div>
+                        <div><h3>感知</h3><p>看懂图片、听懂语音、理解文字</p></div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">B</div>
+                        <div><h3>学习</h3><p>从大量数据中发现规律</p></div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">C</div>
+                        <div><h3>决策</h3><p>根据规律做出预测或选择</p></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI 在身边 -->
+            <section class="slide">
+                <div class="eyebrow fade-up">02 / AROUND US</div>
+                <h2 class="title-md fade-up">AI 就在身边</h2>
+                <p class="subtitle fade-up" style="margin-bottom:18px;">这些日常场景，早已有 AI 在默默服务。</p>
+                <div class="card-grid fade-up">
+                    <div class="card glass card-mini">
+                        <div class="icon">📷</div>
+                        <h3>美颜相机</h3>
+                        <p>人脸识别与实时图像处理</p>
+                    </div>
+                    <div class="card glass card-mini">
+                        <div class="icon">🗺️</div>
+                        <h3>导航推荐</h3>
+                        <p>路况预测与路线规划</p>
+                    </div>
+                    <div class="card glass card-mini">
+                        <div class="icon">🛒</div>
+                        <h3>购物推荐</h3>
+                        <p>基于兴趣的个性化推荐</p>
+                    </div>
+                    <div class="card glass card-mini">
+                        <div class="icon">🎧</div>
+                        <h3>语音助手</h3>
+                        <p>语音识别与自然语言理解</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI 如何工作 -->
+            <section class="slide">
+                <div class="eyebrow fade-up">03 / HOW IT WORKS</div>
+                <h2 class="title-md fade-up">AI 如何学习？</h2>
+                <p class="subtitle fade-up" style="margin-bottom:22px;">就像学生通过做题提高成绩，AI 也通过“数据练习”来变聪明。</p>
+                <div class="step-list fade-up">
+                    <div class="step">
+                        <div class="step-num">1</div>
+                        <div><h3>收集数据</h3><p>图片、文字、声音、行为记录等</p></div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">2</div>
+                        <div><h3>训练模型</h3><p>用算法不断调整参数，找出规律</p></div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">3</div>
+                        <div><h3>验证效果</h3><p>用新数据测试，看预测准不准</p></div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">4</div>
+                        <div><h3>部署应用</h3><p>把训练好的模型放到产品中服务用户</p></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 常见误区 -->
+            <section class="slide">
+                <div class="eyebrow fade-up">04 / MYTHS</div>
+                <h2 class="title-md fade-up">打破常见误区</h2>
+                <p class="subtitle fade-up" style="margin-bottom:18px;">电影里的 AI 和现实差距有多大？一起来看看真相。</p>
+                <div class="card glass fade-up" style="max-width:360px;">
+                    <div class="step">
+                        <div class="step-num" style="background:rgba(255,62,142,0.2); color:var(--accent);">✕</div>
+                        <div><h3>误区：AI 什么都会</h3><p>事实：当前的 AI 大多是“窄 AI”，只在特定任务上表现好。</p></div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num" style="background:rgba(255,62,142,0.2); color:var(--accent);">✕</div>
+                        <div><h3>误区：AI 有感情</h3><p>事实：AI 只是在模仿语言模式，并不理解情感或拥有意识。</p></div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num" style="background:rgba(46,204,113,0.2); color:#2ecc71;">✓</div>
+                        <div><h3>真相：AI 是工具</h3><p>它放大人的能力，但也需要人监督、引导与负责。</p></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 未来展望 -->
+            <section class="slide">
+                <div class="eyebrow fade-up">05 / FUTURE</div>
+                <h2 class="title-md fade-up">机遇与挑战</h2>
+                <p class="subtitle fade-up" style="margin-bottom:18px;">AI 正在重塑世界，我们也需要理性看待它的两面性。</p>
+                <div class="card-grid fade-up">
+                    <div class="card glass card-mini">
+                        <div class="icon" style="background:rgba(46,204,113,0.15);">🚀</div>
+                        <h3>效率提升</h3>
+                        <p>医疗、教育、科研加速创新</p>
+                    </div>
+                    <div class="card glass card-mini">
+                        <div class="icon" style="background:rgba(46,204,113,0.15);">🎨</div>
+                        <h3>创意辅助</h3>
+                        <p>设计、写作、音乐的新助手</p>
+                    </div>
+                    <div class="card glass card-mini">
+                        <div class="icon" style="background:rgba(255,62,142,0.15);">⚠️</div>
+                        <h3>隐私安全</h3>
+                        <p>数据使用需合规、透明</p>
+                    </div>
+                    <div class="card glass card-mini">
+                        <div class="icon" style="background:rgba(255,62,142,0.15);">🧭</div>
+                        <h3>伦理责任</h3>
+                        <p>算法公平与人机协作</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 互动问答 -->
+            <section class="slide">
+                <div class="eyebrow fade-up">06 / QUIZ</div>
+                <h2 class="title-md fade-up">小测一下</h2>
+                <p class="subtitle fade-up" style="margin-bottom:10px;">下面哪个说法是正确的？</p>
+                <div class="quiz-options fade-up" id="quiz">
+                    <button class="quiz-option" data-correct="false">AI 已经拥有人类一样的意识</button>
+                    <button class="quiz-option" data-correct="true">AI 需要数据来学习和优化</button>
+                    <button class="quiz-option" data-correct="false">AI 只能运行在超级计算机上</button>
+                    <button class="quiz-option" data-correct="false">AI 完全不需要人类监督</button>
+                </div>
+                <p class="quiz-feedback" id="quizFeedback">点击选项查看答案解析</p>
+            </section>
+
+            <!-- 结尾 -->
+            <section class="slide">
+                <div class="glow-ring"></div>
+                <div class="eyebrow fade-up">THE END</div>
+                <h2 class="title-md fade-up">开启你的 AI 之旅</h2>
+                <p class="subtitle fade-up" style="margin-bottom:26px;">AI 不是遥远的未来，而是正在发生的现在。理解它、使用它、驾驭它，每个人都能成为智能时代的参与者。</p>
+                <div class="card glass fade-up" style="text-align:center; max-width:320px;">
+                    <p style="font-size:14px; color:var(--text-dim); line-height:1.7; margin-bottom:16px;">
+                        本 H5 为论文《对面向大众的人工智能知识科普类 H5 创作研究——以"AI 入门科普"H5 为例》的实践成果。
+                    </p>
+                    <button class="btn" onclick="location.reload()">再学一遍</button>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="dots" id="dots"></div>
+    <div class="nav-hint" id="navHint">上滑切换 ↓</div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const total = slides.length;
+        let current = 0;
+        let startY = 0, isDragging = false;
+
+        // 生成导航点
+        const dotsContainer = document.getElementById('dots');
+        slides.forEach((_, i) => {
+            const d = document.createElement('div'); d.className = 'dot' + (i===0?' active':''); dotsContainer.appendChild(d);
+        });
+        const dots = dotsContainer.querySelectorAll('.dot');
+
+        function updateSlides() {
+            slides.forEach((s, i) => {
+                s.classList.remove('active','prev','next');
+                if (i === current) s.classList.add('active');
+                else if (i < current) s.classList.add('prev');
+                else s.classList.add('next');
+            });
+            dots.forEach((d, i) => d.classList.toggle('active', i === current));
+            document.getElementById('progressBar').style.width = ((current + 1) / total * 100) + '%';
+            document.getElementById('navHint').style.opacity = current === total - 1 ? '0' : '0.8';
+        }
+
+        function nextSlide() { if (current < total - 1) { current++; updateSlides(); } }
+        function prevSlide() { if (current > 0) { current--; updateSlides(); } }
+
+        // 触摸/鼠标滑动
+        const container = document.getElementById('slides');
+        container.addEventListener('touchstart', e => { startY = e.touches[0].clientY; isDragging = true; }, {passive:true});
+        container.addEventListener('touchmove', () => {}, {passive:true});
+        container.addEventListener('touchend', e => {
+            if (!isDragging) return;
+            isDragging = false;
+            const endY = e.changedTouches[0].clientY;
+            if (startY - endY > 50) nextSlide();
+            else if (endY - startY > 50) prevSlide();
+        }, {passive:true});
+
+        container.addEventListener('mousedown', e => { startY = e.clientY; isDragging = true; });
+        container.addEventListener('mouseup', e => {
+            if (!isDragging) return;
+            isDragging = false;
+            const endY = e.clientY;
+            if (startY - endY > 50) nextSlide();
+            else if (endY - startY > 50) prevSlide();
+        });
+
+        // 滚轮支持
+        let wheelLock = false;
+        container.addEventListener('wheel', e => {
+            if (wheelLock) return;
+            wheelLock = true;
+            if (e.deltaY > 0) nextSlide(); else prevSlide();
+            setTimeout(() => wheelLock = false, 700);
+        }, {passive:true});
+
+        // 键盘支持
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') prevSlide();
+        });
+
+        // 问答交互
+        document.querySelectorAll('.quiz-option').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const isCorrect = this.dataset.correct === 'true';
+                document.querySelectorAll('.quiz-option').forEach(b => b.classList.remove('correct','wrong'));
+                this.classList.add(isCorrect ? 'correct' : 'wrong');
+                document.getElementById('quizFeedback').textContent = isCorrect
+                    ? '✅ 正确！AI 通过大量数据进行训练，不断优化预测能力。'
+                    : '❌ 不太对哦。正确答案是：AI 需要数据来学习和优化。';
+                document.getElementById('quizFeedback').style.color = isCorrect ? '#2ecc71' : 'var(--accent)';
+            });
+        });
+
+        updateSlides();
+    </script>
+</body>
+</html>
